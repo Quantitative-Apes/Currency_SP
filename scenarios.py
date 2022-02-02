@@ -19,7 +19,7 @@ class Consts:
 
 
 def gen_scenarios_normal(mu=Consts.test_mu, Sigma=Consts.test_Sigma, n=100, T=1, r_f=0.01):
-    """Generates scenarios as growth factors from the multivariate normal distribution and a risk free growth factor"""
+    """Generates scenarios as growth factors from the multivariate normal distribution and a risk free growth factor. Assumes that assets follow a log-normal distribution"""
     # TODO: Implement variance reduction techniques
     scenario_returns = np.random.multivariate_normal(mean=mu, cov=Sigma, size=n)
     scenario_growth_factors = np.exp(scenario_returns*T)
