@@ -17,9 +17,9 @@ class Consts:
         [0.0208707035295278,	0.00866165463541286, 0.0141911729520033, 0.0306422243431530,	0.0909601659311882]]
     )
 
-#@jit
-def gen_scenarios_normal(params=(Consts.test_mu, Consts.test_Sigma), n=100, T=1, r_f=0.01):
-    """Generates scenarios as growth factors from the multivariate normal distribution and a risk free growth factor"""
+
+def gen_scenarios_normal(params=(Consts.test_mu,Consts.test_Sigma), n=100, T=1, r_f=0.01):
+    """Generates scenarios as growth factors from the multivariate normal distribution and a risk free growth factor. Assumes that asset returns follow a log-normal distribution"""
     # TODO: Implement variance reduction techniques
     mu = params[0]
     Sigma = params[1]
