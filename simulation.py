@@ -38,14 +38,19 @@ def simulate_portfolio(n_scenarios, r_f_opt, r_f_act, T_sim, P, t_p, w_est, t_c_
 
     h = h_init  # NOTE that these are weights and that c+sum(h) should always sum up to one
     c = c_init # NOTE that these are weights and that c+sum(h) should always sum up to one
-    assert (sum(h)+c).item() == 1, "Total weights in risk free asset and risky assets should sum up to one"
     wealths = np.zeros(n_simulation_periods) # wealth at start of each period
     holdings = np.zeros((n_simulation_periods, n_assets))
     print('Simulating for', n_simulation_periods, 'periods')
 
+    # Update algorithm:
+    # Estimate statistics
+    # Optimize and make buy sell decisions, remove transaction costs incurred from total wealth
+    # Go to next period, update wealth according to growth of assets
     for i, period in tqdm(enumerate(range(start_period_idx, n_periods)), total=n_simulation_periods):
+        
+        # calculate returns of our holdings from last period
         if i > 0:
-            # calculate returns of our holdings
+            
             c_growth = np.exp(t_p*r_f_act)
             risky_asset_growth = P[period, :]/P[period-1, :]
             portfolio_growth = (risky_asset_growth @ h + c_growth*c).item()
@@ -58,16 +63,33 @@ def simulate_portfolio(n_scenarios, r_f_opt, r_f_act, T_sim, P, t_p, w_est, t_c_
         P_est = P[period-w_est:period, :]
         dist_params = est_fun(P_est, t_p)
         scenario_growth_factors, R_f = scen_fun(dist_params, n_scenarios, T_sim, r_f_opt)
-        x_star, _ = optimizer.optimize(scenario_growth_factors, R_f, h, c)
 
-        # TODO: Oversee this part, not completely accurate
-        x_star = x_star*(1-t_c_act) # account for transaction cost
+        # optimize buy sell decisions
+        x_star, _ = optimizer.optimize(scenario_growth_factors, R_f, h, c)
+        
         x_b = x_star[:n_assets]
         x_s = x_star[n_assets:]
+
         # make the buy/sell decisions
         h = h.reshape(n_assets, 1) - x_s.reshape(n_assets, 1) + x_b.reshape(n_assets, 1) # buy and sell decisions
-        holdings[i, :] = h.reshape(n_assets)
-        c = c + sum(x_s - x_b) # In reality, we would convert to other currency directly!!!
+        h = np.around(h, 5) # round to make values non-negative
+        c = 1-np.sum(h).item()
 
+        # normalize to portfolio sum 1 in case of floating point precision errors
+        fp_sum = np.sum(h) + c
+        h = h/fp_sum
+        c = c/fp_sum
+
+        # Check feasibility
+        assert c + np.sum(h).item() == 1, "Sum of portfolio weights should always be one"
+        assert np.all(h >= 0), "No shorting"
+        assert np.sum(h).item() <= 1, "Cannot have more than 100% of porfolio invested"
+        
+        
+        # Remove from wealth according to transactions
+        wealths[i] = wealths[i]*(1-np.sum(x_b + x_s)*t_c_act)
+
+        # save holdings for current period in array for plot
+        holdings[i, :] = h.reshape(n_assets)
     
     return wealths, holdings

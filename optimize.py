@@ -16,6 +16,8 @@ class TwoStepSPOptimizer:
         h_init = h_init.reshape(n_assets, 1) # should always sum up to one
         x = np.zeros((n_assets*2, 1)) # initial solution
 
+        assert (sum(h_init)+c_init).item() == 1, "Total weights in risk free asset and risky assets should sum up to one"
+
         # Set up constraints
         shorting_constraint = np.concatenate([-np.eye(n_assets), np.eye(n_assets)], axis=1)
         borrowing_constraint = np.concatenate([np.ones((1, n_assets)), -np.ones((1, n_assets))], axis=1) + self.transaction_cost

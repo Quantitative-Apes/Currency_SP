@@ -38,14 +38,15 @@ def demo():
 def simulate():
 
     P = pd.DataFrame()
-    coin_returns = {}
-    for coin in ['ADA', 'BNB', 'DASH', 'DOGE', 'ETH']:
+
+    coins = ['ADA', 'BNB', 'DASH', 'DOGE', 'ETH']
+    for coin in coins:
         fname = coin+'BUSD_5min.csv'
 
         df = pd.read_csv(os.path.join(os.getcwd(), 'data', fname))
         P = pd.concat([P, df['close']], axis=1)
     
-    P = P.values[-3000:, :]
+    P = P.values[:500, :]
     coin_returns = P[-1,:]/P[0,:]
     W, H = simulation.simulate_portfolio(
         n_scenarios=10000,
@@ -55,7 +56,7 @@ def simulate():
         P = P,
         t_p = 1, # 5 minute period
         w_est = 288, # 1 day period used for statistics estimate
-        t_c_opt = 0.0005,
+        t_c_opt = 0.005,
         t_c_act = 0.001, # corresponding to Binance's VIP Tier 0 (base)
         gamma = 2,
         est_fun=estimate_statistics.est_log_normal,
@@ -67,7 +68,10 @@ def simulate():
     ax[0].plot(W)
     ax[0].scatter(np.ones(len(coin_returns))*len(W), coin_returns)
     # add corresponding returns for currencies used
-    ax[1].plot(H)
+    for i in range(len(coin_returns)):
+        ax[0].annotate(coins[i], (len(W), coin_returns[i]))
+    ax[1].plot(H, label=coins)
+    ax[1].legend()
     plt.show()
 
 if __name__ == '__main__':
